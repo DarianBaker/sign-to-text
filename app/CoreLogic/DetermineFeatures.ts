@@ -310,6 +310,155 @@ export function isLetterE(features: Features): boolean
 
 }
 
+export function isLetterF(features: Features): boolean {
+    // Basic validation
+    if (!features.landmarks || features.landmarks.length !== 21) return false;
+
+    const { landmarks, jointAngles, handOrientation, relativeDistances } = features;
+    const thumbTip = landmarks[4];
+    const indexTip = landmarks[8];
+    
+    // Scale threshold based on the hand size
+    const handScale = relativeDistances.wrist_middle;
+
+    const isFacingCamera = handOrientation.palmNormalVector.z < 0.1;
+    if (!isFacingCamera) return false;
+
+    const tipDistance = distance(thumbTip, indexTip);
+    if (tipDistance > handScale * 0.4) return false;
+
+    const fingerNames = ['middle', 'ring', 'pinky'];
+    for (const name of fingerNames) {
+        const baseAngle = Math.abs(jointAngles[`${name}_base`]);
+        const tipAngle = Math.abs(jointAngles[`${name}_tip`]);
+
+        // If the finger is bent more than 30 degrees, it's not "extended"
+        if (baseAngle > 30 || tipAngle > 30) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+export function isLetterG(features: Features): boolean {
+    // G is index finger pointed to the side, thumb extended parallel, other fingers curled.
+    if (features.landmarks.length !== 21) return false;
+    const { landmarks, jointAngles, handOrientation, relativeDistances } = features;
+    const wrist = landmarks[0];
+    const thumbTip = landmarks[4];
+    const indexTip = landmarks[8];
+    const handScale = relativeDistances.wrist_middle;
+
+    // Palm should face sideways (normal vector x component significant)
+    if (Math.abs(handOrientation.palmNormalVector.x) < 0.5) return false;
+    // Index finger extended: small joint angles
+    if (jointAngles.index_base > 30 || jointAngles.index_tip > 30) return false;
+    // Thumb extended: small joint angles
+    if (jointAngles.thumb_base > 30 || jointAngles.thumb_tip > 30) return false;
+    // Other fingers curled: tips closer to wrist than PIPs
+    for (let finger of [12, 16, 20]) {
+        const pip = finger - 2;
+        if (distance(landmarks[finger], wrist) > distance(landmarks[pip], wrist)) {
+            return false;
+        }
+    }
+    // Thumb and index should be close but not touching
+    const tipDistance = distance(thumbTip, indexTip);
+    if (tipDistance > handScale * 0.6 || tipDistance < handScale * 0.2) return false;
+    return true;
+}
+
+export function isLetterH(features: Features): boolean
+{
+    if (features.landmarks.length !== 21) return false;
+    const { landmarks, jointAngles, handOrientation, relativeDistances } = features;
+    const wrist = landmarks[0];
+    const thumbTip = landmarks[4];
+    const indexTip = landmarks[8];
+    const middleTip = landmarks[12];
+    const handScale = relativeDistances.wrist_middle;
+    // Palm should face sideways (normal vector x component significant)
+    if (Math.abs(handOrientation.palmNormalVector.x) < 0.5) return false;
+    // Index and Middle fingers extended: small joint angles
+    if (jointAngles.index_base > 30 || jointAngles.index_tip > 30) return false;
+    if (jointAngles.middle_base > 30 || jointAngles.middle_tip > 30) return false;
+    // Ring and Pinky fingers curled: tips closer to wrist than PIPs
+    for (let finger of [16, 20]) {
+        const pip = finger - 2;
+        if (distance(landmarks[finger], wrist) > distance(landmarks[pip], wrist)) {
+            return false;
+        }
+    }
+    // Thumb should be close to the hand (not sticking out)
+    if (distance(thumbTip, landmarks[1]) > handScale * 0.6) return false;
+    return true;
+}
+
+export function isLetterI(features: Features): boolean {
+    if (!features.landmarks || features.landmarks.length !== 21) return false;
+    
+    const { landmarks, jointAngles, handOrientation, relativeDistances } = features;
+    const wrist = landmarks[0];
+    const handScale = relativeDistances.wrist_middle;
+
+
+    if (handOrientation.palmNormalVector.z > 0.2) return false;
+
+
+    if (Math.abs(jointAngles.pinky_base) > 25 || Math.abs(jointAngles.pinky_tip) > 25) {
+        return false;
+    }
+
+
+    const curledFingers = ['index', 'middle', 'ring'];
+    for (const finger of curledFingers) {
+        const angle = Math.abs(jointAngles[`${finger}_base`]);
+        // If the angle is small, the finger is too straight
+        if (angle < 60) return false; 
+    }
+
+
+    const thumbTip = landmarks[4];
+    const indexKnuckle = landmarks[5];
+    if (distance(thumbTip, indexKnuckle) > handScale * 0.7) return false;
+
+    return true;
+}
+
+export function isLetterJ(features: Features): boolean {
+    if (!features.landmarks || features.landmarks.length !== 21) return false;
+    
+    const { landmarks, jointAngles, handOrientation, relativeDistances, handedness } = features;
+    const handScale = relativeDistances.wrist_middle;
+    const isLeftHand = handedness === 'Left';
+
+
+    if (handOrientation.palmNormalVector.z > 0.4) return false;
+
+
+    if (Math.abs(jointAngles.pinky_base) > 40) return false;
+
+    const curledFingers = ['index', 'middle', 'ring'];
+    for (const finger of curledFingers) {
+        if (Math.abs(jointAngles[`${finger}_base`]) < 60) return false; 
+    }
+
+    const upVectorX = handOrientation.palmNormalVector.x;
+
+
+    const isTilted = isLeftHand ? upVectorX < -0.2 : upVectorX > 0.2;
+    
+    if (!isTilted) return false;
+
+
+    const thumbTip = landmarks[4];
+    const indexKnuckle = landmarks[5];
+    if (distance(thumbTip, indexKnuckle) > handScale * 0.8) return false;
+
+    return true;
+}
+
 export function letterDetected(features: Features): string
 {
     if (isLetterA(features))
@@ -322,5 +471,15 @@ export function letterDetected(features: Features): string
         return "D";
     if (isLetterE(features))
         return "E";
+    if (isLetterF(features))
+        return "F";
+    if (isLetterG(features))
+        return "G";
+    if (isLetterH(features))
+        return "H";
+    if (isLetterI(features))
+        return "I";
+    if (isLetterJ(features))
+        return "J";
     return "";
 }

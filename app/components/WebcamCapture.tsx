@@ -1,30 +1,29 @@
 "use client"
+import { forwardRef } from "react";
 import Webcam from "react-webcam";
 
-
 interface WebcamCaptureProps {
-    onMouseEntered?: () => void
-    onMouseLeft?: () => void
-    ref?: React.Ref<Webcam>
+    onMouseEntered?: () => void;
+    onMouseLeft?: () => void;
 }
 
-const WebcamCapture = ({ onMouseEntered, onMouseLeft, ref }: WebcamCaptureProps) => {
+const WebcamCapture = forwardRef<Webcam, WebcamCaptureProps>(({ onMouseEntered, onMouseLeft }, ref) => {
     const constraints = {
         facingMode: "user"
     };
 
-
     return (
-        
-    <Webcam 
-        ref={ref}
-        className="h-screen w-screen"
-        audio = {false}
-        videoConstraints = {constraints}
-        onMouseEnter={onMouseEntered}
-        onMouseLeave={onMouseLeft}
-    />
-  )
-}
+        <Webcam 
+            ref={ref}
+            className="h-screen w-screen"
+            audio={false}
+            videoConstraints={constraints}
+            onMouseEnter={onMouseEntered}
+            onMouseLeave={onMouseLeft}
+        />
+    );
+});
 
-export default WebcamCapture
+WebcamCapture.displayName = "WebcamCapture";
+
+export default WebcamCapture;

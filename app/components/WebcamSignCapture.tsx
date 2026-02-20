@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import WebcamCapture from "./WebcamCapture";
-import { MdWavingHand } from "react-icons/md";
+import { MdWavingHand, MdHelpOutline, MdClose } from "react-icons/md";
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 import Webcam from "react-webcam";
+import Image from "next/image";
 import determineFeatures, { letterDetected } from "../CoreLogic/DetermineFeatures";
 
   
@@ -31,6 +32,7 @@ const WebcamSignCapture = () => {
 
     const [isHoverCapture, setIsHoverCapture] = useState(false)
     const [isButtonClicked, setIsButtonClicked] = useState(false)
+    const [showReference, setShowReference] = useState(true)
     const videoRef = useRef<Webcam>(null); // webcam element
     const handLandmarkerRef = useRef<HandLandmarker | null>(null); // AI instance
 
@@ -133,6 +135,52 @@ const WebcamSignCapture = () => {
                     </div>
                 )}
             </div>
+
+            {/* Reference Image Trigger */}
+            <div className="absolute top-6 right-6 z-20">
+                <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowReference(!showReference)}
+                    className="bg-white/20 backdrop-blur-md border border-white/30 p-3 rounded-full shadow-lg text-white hover:bg-white/30 transition-colors"
+                    title="Show ASL Reference"
+                >
+                    {showReference ? <MdClose size={24} /> : <MdHelpOutline size={24} />}
+                </motion.button>
+            </div>
+
+            {/* Reference Image Panel */}
+            <AnimatePresence>
+                {showReference && (
+                    <motion.div
+                        initial={{ opacity: 0, x: 100, scale: 0.8 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: 100, scale: 0.8 }}
+                        className="absolute top-20 right-6 z-20 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden shadow-2xl max-w-sm w-full pointer-events-auto"
+                    >
+                        <div className="p-4 border-b border-white/10 bg-white/5">
+                            <h3 className="text-white font-semibold flex items-center gap-2">
+                                <MdHelpOutline />
+                                ASL Reference (A-Z)
+                            </h3>
+                        </div>
+                        <div className="relative aspect-auto bg-white/5 p-2">
+                            <Image 
+                                src="/sign-to-text/asl-reference.png" 
+                                alt="ASL Reference" 
+                                width={400} 
+                                height={600}
+                                className="w-full h-auto rounded-lg"
+                                priority
+                            />
+                        </div>
+                        <div className="p-3 bg-white/5 text-xs text-white/60 text-center">
+                            Use these hand shapes to sign letters A through J.
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <motion.div
                 onMouseEnter={() => setIsHoverCapture(true)} 
                 onMouseLeave={() => setIsHoverCapture(false)}
